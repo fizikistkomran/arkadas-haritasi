@@ -248,9 +248,11 @@ def edit_page(slug):
         connections = c.fetchall()
 
     return render_template("edit.html", slug=slug, connections=connections)
+    
+init_db()
 
 if __name__ == '__main__':
-    init_db()
+    
     app.run(debug=True)
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 
