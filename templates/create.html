@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta charset="UTF-8">
+  <style>
+  body {
+    font-family: sans-serif;
+    margin: 10px;
+    padding: 0;
+  }
+
+  input, button, select {
+    font-size: 1rem;
+    padding: 0.5em;
+    margin: 0.3em 0;
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+  }
+
+  label {
+    font-size: 1rem;
+    display: block;
+    margin: 0.5em 0 0.2em;
+  }
+
+  a {
+    font-size: 1rem;
+    margin: 0.3em;
+    display: inline-block;
+  }
+
+  .nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  #mynetwork {
+    width: 100%;
+    height: 70vh;
+    border: 1px solid #ccc;
+  }
+</style>
+
+  <title>Sayfa Oluştur</title>
+</head>
+<body>
+  <h2>Yeni Kullanıcı Oluştur</h2>
+  <form method="post">
+    <label>Adınız:</label><br>
+    <input name="name" required><br><br>
+
+    <label>Slug (sayfa URL'si için, örn: ali):</label><br>
+    <input name="slug" required><br><br>
+
+    <label>Şifre:</label><br>
+    <input type="password" name="password" required><br><br>
+
+    <button type="submit">Sayfamı Oluştur</button>
+  </form>
+
+  <p><a href="/">← Ana Sayfaya Dön</a></p>
+</body>
+</html>
+

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Arkadaşlık Haritası</title>
+  <meta charset="UTF-8">
+</head>
+<body>
+  <h1>Arkadaşlık Haritası</h1>
+
+  <h3>➕ Yeni kullanıcı oluştur</h3>
+  <form action="/create" method="get">
+    <button type="submit">Sayfamı Oluştur</button>
+  </form>
+
+  <hr>
+
+  <h3>🔐 Var olan sayfana giriş</h3>
+  <form method="get" action="/giris-yap">
+    <label>Sayfa isminiz (örnek: ali):</label><br>
+    <input name="slug" required>
+    <button type="submit">Giriş Sayfasına Git</button>
+  </form>
+</body>
+</html>
+

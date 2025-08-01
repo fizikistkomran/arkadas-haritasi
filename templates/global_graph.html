@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <title>Genel Sosyal Ağ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  
+  <style>
+  body {
+    font-family: sans-serif;
+    margin: 10px;
+    padding: 0;
+  }
+
+  input, button, select {
+    font-size: 1rem;
+    padding: 0.5em;
+    margin: 0.3em 0;
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+  }
+
+  label {
+    font-size: 1rem;
+    display: block;
+    margin: 0.5em 0 0.2em;
+  }
+
+  a {
+    font-size: 1rem;
+    margin: 0.3em;
+    display: inline-block;
+  }
+
+  .nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  #mynetwork {
+    width: 100%;
+    height: 70vh;
+    border: 1px solid #ccc;
+  }
+</style>
+
+</head>
+<body>
+  <h2>Tüm Kullanıcıların Ortak Haritası</h2>
+
+  <div style="margin-bottom: 20px;">
+    <a href="/create">🆕 Sayfanı Oluştur</a> |
+    <a href="#" onclick="loginPrompt()">🔐 Sayfa Girişi</a> |
+    <a href="#" onclick="goToPage()">🔎 Sayfaya Git</a>
+  </div>
+
+ <div id="mynetwork"></div>
+
+
+  <script>
+    const nodes = new vis.DataSet({{ nodes | safe }});
+    const edges = new vis.DataSet({{ edges | safe }});
+    const container = document.getElementById("mynetwork");
+    const data = { nodes, edges };
+    const options = {
+      nodes: { shape: "dot", size: 20 },
+      edges: { arrows: "to", font: { align: "middle" } },
+      physics: { stabilization: false }
+    };
+    const network = new vis.Network(container, data, options);
+
+    network.on("click", function (params) {
+      if (params.nodes.length > 0) {
+        const nodeId = params.nodes[0];
+        const node = nodes.get(nodeId);
+        if (node.slug) {
+          window.location.href = "/" + node.slug;
+        }
+      }
+    });
+
+    function loginPrompt() {
+      const slug = prompt("Sayfa adınızı girin (örnek: seda)");
+      if (slug) window.location.href = "/login/" + slug;
+    }
+
+    function goToPage() {
+      const slug = prompt("Gitmek istediğiniz sayfa adı (örnek: arda)");
+      if (slug) window.location.href = "/" + slug;
+    }
+  </script>
+</body>
+</html>
+

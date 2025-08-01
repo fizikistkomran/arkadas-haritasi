@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bağlantıları Düzenle — {{ slug }}</title>
+</head>
+<body>
+  <h2>🔧 {{ slug }} — Bağlantıları Düzenle</h2>
+
+  <a href="/{{ slug }}">← Geri Dön</a>
+  <hr>
+
+  {% if connections %}
+    <table border="1" cellpadding="8">
+      <tr>
+        <th>Ziyaretçi Adı</th>
+        <th>Tanışma Türü</th>
+        <th>Tanıştıran</th>
+        <th>Sil</th>
+      </tr>
+      {% for conn in connections %}
+      <tr>
+        <td>{{ conn[1] }}</td>
+        <td>{{ conn[2] }}</td>
+        <td>{{ conn[3] or '-' }}</td>
+        <td>
+          <form method="POST" style="display:inline;">
+            <input type="hidden" name="delete_id" value="{{ conn[0] }}">
+            <button type="submit" onclick="return confirm('Silmek istediğine emin misin?')">🗑️</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>Henüz bağlantı yok.</p>
+  {% endif %}
+</body>
+</html>
+
