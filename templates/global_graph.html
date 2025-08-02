@@ -1,79 +1,121 @@
 <!DOCTYPE html>
 <html>
 <head>
+<!-- Bootstrap 5 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Genel Sosyal Ağ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-  
   <style>
-  body {
-    font-family: sans-serif;
-    margin: 10px;
-    padding: 0;
-  }
+  .home-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background-color: #ffffffcc;
+  color: #333;
+  padding: 10px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 14px;
+  z-index: 999;
+  transition: background 0.3s ease;
+}
 
-  input, button, select {
-    font-size: 1rem;
-    padding: 0.5em;
-    margin: 0.3em 0;
-    width: 100%;
-    max-width: 400px;
-    box-sizing: border-box;
-  }
+.home-button:hover {
+  background-color: #ffcccc;
+}
 
-  label {
-    font-size: 1rem;
-    display: block;
-    margin: 0.5em 0 0.2em;
-  }
-
-  a {
-    font-size: 1rem;
-    margin: 0.3em;
-    display: inline-block;
-  }
-
-  .nav-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-
-  #mynetwork {
-    width: 100%;
-    height: 70vh;
-    border: 1px solid #ccc;
-  }
-</style>
-
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 10px;
+    }
+    #mynetwork {
+      height: 85vh;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+    }
+    .top-menu {
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .top-menu a {
+      background: #008CBA;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 5px;
+      text-decoration: none;
+    }
+    .top-menu a:hover {
+      background: #005f73;
+    }
+  </style>
 </head>
 <body>
+<a href="/" class="home-button">Ana Sayfa</a>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
   <h2>Tüm Kullanıcıların Ortak Haritası</h2>
 
-  <div style="margin-bottom: 20px;">
-    <a href="/create">🆕 Sayfanı Oluştur</a> |
-    <a href="#" onclick="loginPrompt()">🔐 Sayfa Girişi</a> |
+  <div class="top-menu">
+    <a href="/create">🆕 Sayfanı Oluştur</a>
+    <a href="#" onclick="loginPrompt()">🔐 Sayfa Girişi</a>
     <a href="#" onclick="goToPage()">🔎 Sayfaya Git</a>
   </div>
 
- <div id="mynetwork"></div>
-
+  <div id="mynetwork"></div>
 
   <script>
     const nodes = new vis.DataSet({{ nodes | safe }});
     const edges = new vis.DataSet({{ edges | safe }});
+
     const container = document.getElementById("mynetwork");
     const data = { nodes, edges };
+
     const options = {
-      nodes: { shape: "dot", size: 20 },
-      edges: { arrows: "to", font: { align: "middle" } },
-      physics: { stabilization: false }
+      nodes: {
+        shape: "dot",
+        size: 18,
+        font: {
+          size: 14,
+          color: "#343434"
+        }
+      },
+      edges: {
+        arrows: "to",
+        smooth: {
+          type: "curvedCW",   // Eğri ok
+          roundness: 0.4
+        },
+        color: {
+          color: "#848484",
+          highlight: "#ff6f61"
+        }
+      },
+      physics: {
+        stabilization: false,
+        barnesHut: {
+          gravitationalConstant: -30000,
+          springLength: 100
+        }
+      },
+      interaction: {
+        hover: true,
+        tooltipDelay: 200
+      }
     };
+
     const network = new vis.Network(container, data, options);
 
+    // Baloncuk tıklanınca linke git
     network.on("click", function (params) {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0];
@@ -94,6 +136,7 @@
       if (slug) window.location.href = "/" + slug;
     }
   </script>
+
 </body>
 </html>
 

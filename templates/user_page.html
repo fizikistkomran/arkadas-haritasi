@@ -1,102 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>{{ slug }}'nin Sosyal Haritası</title>
-  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <meta charset="UTF-8">
+  <title>{{ slug }} - Ağ Sayfası</title>
   <style>
-  body {
-    font-family: sans-serif;
-    margin: 10px;
-    padding: 0;
-  }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      overflow: hidden;
+    }
 
-  input, button, select {
-    font-size: 1rem;
-    padding: 0.5em;
-    margin: 0.3em 0;
-    width: 100%;
-    max-width: 400px;
-    box-sizing: border-box;
-  }
+    #network {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0; /* grafiği en arkaya al */
+    }
 
-  label {
-    font-size: 1rem;
-    display: block;
-    margin: 0.5em 0 0.2em;
-  }
+    .home-button {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background-color: #ffffffcc;
+      color: #333;
+      padding: 10px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 14px;
+      z-index: 3;
+      transition: background 0.3s ease;
+    }
 
-  a {
-    font-size: 1rem;
-    margin: 0.3em;
-    display: inline-block;
-  }
+    .home-button:hover {
+      background-color: #ffcccc;
+    }
 
-  .nav-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
+    .form-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.9); /* saydamlık */
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      z-index: 2; /* grafiğin üstünde */
+      text-align: center;
+      width: 300px;
+    }
 
-  #mynetwork {
-    width: 100%;
-    height: 70vh;
-    border: 1px solid #ccc;
-  }
-</style>
+    .form-container h2 {
+      margin-bottom: 20px;
+    }
 
+    .form-container input[type="text"],
+    .form-container select {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .form-container button {
+      margin-top: 15px;
+      padding: 12px 20px;
+      background: #ffffffcc;
+      color: #333;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .form-container button:hover {
+      background: #ffcccc;
+    }
+  </style>
+
+  <!-- Vis.js -->
+  <script type="text/javascript" src="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.js"></script>
+  <link href="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.css" rel="stylesheet">
 </head>
 <body>
-  <h2>{{ slug }}'nin Sosyal Haritası</h2>
 
-  {% if is_owner %}
-    <p><strong>🔒 Bu sizin sayfanız. Ziyaretçiler sizin adınıza bağlantı ekleyebilir.</strong></p>
-    <a href="/edit/{{ slug }}">✏️ Bağlantıları Düzenle</a>
-  {% else %}
-    <form method="POST">
-      <label>Adınız:</label>
-      <input type="text" name="name" required><br><br>
-      
-      <label>Bu kişiyle nasıl tanıştınız?</label><br>
-      <input type="radio" name="type" value="birebir" checked> Birebir tanıştım<br>
-      <input type="radio" name="type" value="vasıtasıyla"> Birisi vasıtasıyla<br><br>
-      
-      <div id="connectorDiv" style="display: none;">
-        <label>Tanıştıran kişinin adı:</label>
-        <input type="text" name="connector"><br><br>
-      </div>
+<a href="/" class="home-button">Ana Sayfa</a>
 
-      <button type="submit">➕ Ekle</button>
-    </form>
+<div id="network"></div>
 
-    <script>
-      document.querySelectorAll('input[name=\"type\"]').forEach(radio => {
-        radio.addEventListener('change', () => {
-          const connectorDiv = document.getElementById('connectorDiv');
-          connectorDiv.style.display = radio.value === 'vasıtasıyla' ? 'block' : 'none';
-        });
-      });
-    </script>
-  {% endif %}
+{% if not is_owner %}
+<form class="form-container" method="POST">
+  <h2>Bağlantı Ekle</h2>
+  <input type="text" name="name" placeholder="İsim Soyisim" required>
+  <select name="type" required>
+    <option value="">Bağlantı Türü</option>
+    <option value="arkadaş">Arkadaş</option>
+    <option value="aile">Aile</option>
+    <option value="iş">İş</option>
+    <option value="okul">Okul</option>
+  </select>
+  <input type="text" name="connector" placeholder="Kim vasıtasıyla? (isteğe bağlı)">
+  <button type="submit">Ekle</button>
+</form>
+{% endif %}
 
-  <hr>
-  <div id="mynetwork"></div>
+<script>
+  const nodes = {{ nodes|tojson }};
+  const edges = {{ edges|tojson }};
 
+  const container = document.getElementById("network");
+  const data = {
+    nodes: new vis.DataSet(nodes),
+    edges: new vis.DataSet(edges)
+  };
 
-  <script>
-    const nodes = new vis.DataSet({{ nodes | safe }});
-    const edges = new vis.DataSet({{ edges | safe }});
-    const container = document.getElementById("mynetwork");
-    const data = { nodes, edges };
-    const options = {
-      nodes: { shape: "dot", size: 20 },
-      edges: { arrows: "to", font: { align: "middle" } },
-      physics: { stabilization: false }
-    };
-    const network = new vis.Network(container, data, options);
-  </script>
+  const options = {
+    nodes: { shape: "dot", size: 10 },
+    edges: { arrows: "to", smooth: true },
+    physics: { stabilization: false }
+  };
+
+  new vis.Network(container, data, options);
+</script>
 </body>
 </html>
 

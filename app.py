@@ -120,16 +120,35 @@ def build_graph_multi(rows, user_rows):
     return nodes_vis, edges_vis
 
 @app.route('/')
-def index():
+def home():
     with sqlite3.connect(DB_FILE) as conn:
         c = conn.cursor()
         c.execute("SELECT owner_id, visitor_name, connection_type, connector_name FROM connections")
         conn_rows = c.fetchall()
         c.execute("SELECT name, slug FROM users")
         user_rows = c.fetchall()
-
         nodes, edges = build_graph_multi(conn_rows, user_rows)
-        return render_template("global_graph.html", nodes=nodes, edges=edges)
+    return render_template("home.html", nodes=nodes, edges=edges)
+    
+    
+@app.route('/login', methods=['GET', 'POST'])
+def login_redirect():
+    if request.method == 'POST':
+        name = request.form['name']
+        password = request.form['password']
+        slug = name.lower().replace(' ', '-')
+
+        with sqlite3.connect(DB_FILE) as conn:
+            c = conn.cursor()
+            c.execute("SELECT id, password FROM users WHERE slug = ?", (slug,))
+            row = c.fetchone()
+            if row and check_password_hash(row[1], password):
+                session['user_id'] = row[0]
+                return redirect(url_for('edit_page', slug=slug))
+        return "İsim veya şifre hatalı."
+    
+    return render_template("login.html")
+
 
 @app.route('/create', methods=['GET', 'POST'])
 def create():
@@ -248,11 +267,10 @@ def edit_page(slug):
         connections = c.fetchall()
 
     return render_template("edit.html", slug=slug, connections=connections)
-    
+
 init_db()
 
 if __name__ == '__main__':
-    
-    app.run(debug=True)
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    app.run()
+
 
