@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Giriş Yap</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+    }
+
+    .form-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 300px;
+    }
+
+    .form-container h2 {
+      margin-bottom: 20px;
+    }
+
+    .form-container input[type="text"],
+    .form-container input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .form-container button {
+      margin-top: 15px;
+      padding: 12px 20px;
+      background: #ffffffcc;
+      color: #333;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .form-container button:hover {
+      background: #ffcccc;
+    }
+
+    .home-button {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background-color: #ffffffcc;
+      color: #333;
+      padding: 10px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 14px;
+      z-index: 999;
+      transition: background 0.3s ease;
+    }
+
+    .home-button:hover {
+      background-color: #ffcccc;
+    }
+  </style>
+</head>
+<body>
+  <a href="/" class="home-button">Ana Sayfa</a>
+
+  <form class="form-container" method="POST">
+    <h2>Hesabına Giriş Yap</h2>
+    <input type="text" name="name" placeholder="İsim Soyisim" required>
+    <input type="password" name="password" placeholder="Şifre" required>
+    <button type="submit">Giriş</button>
+  </form>
+</body>
+</html>
+
