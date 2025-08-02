@@ -7,12 +7,20 @@ from collections import defaultdict
 import re
 import unicodedata
 
+import re
+
 def slugify(text):
-    text = unicodedata.normalize('NFD', text)
-    text = text.encode('ascii', 'ignore').decode('utf-8')  # aksanlı karakterleri kaldır
-    text = re.sub(r'[^\w\s-]', '', text.lower())
-    text = re.sub(r'\s+', '-', text).strip('-')
-    return re.sub(r'-+', '-', text)
+    mapping = {
+        'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
+        'Ç': 'c', 'Ğ': 'g', 'İ': 'i', 'Ö': 'o', 'Ş': 's', 'Ü': 'u'
+    }
+    for src, target in mapping.items():
+        text = text.replace(src, target)
+    text = text.lower()
+    text = re.sub(r'[^\w\s-]', '', text)  # noktalama kaldır
+    text = re.sub(r'\s+', '-', text)      # boşlukları - yap
+    return text.strip('-')
+
 
 
 app = Flask(__name__)
