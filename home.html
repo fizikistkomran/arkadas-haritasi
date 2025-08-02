@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Enfekte</title>
+
+  <!-- Vis.js CDN -->
+  <script src="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.js"></script>
+  <link href="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.css" rel="stylesheet">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: 'Arial', sans-serif;
+    }
+
+    #network {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 100vw;
+      opacity: 0.45;
+      z-index: 0;
+    }
+
+    #overlay-title {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    #overlay-title h1 {
+      font-size: 80px;
+      color: rgba(0, 255, 0, 0.3);
+      font-weight: 900;
+      margin: 0;
+      text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .buttons {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      text-align: center;
+    }
+
+    .buttons input[type="text"] {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      width: 220px;
+      margin-bottom: 10px;
+    }
+
+    .buttons a, .buttons button {
+      display: inline-block;
+      margin: 10px;
+      padding: 12px 24px;
+      background: #ffffffcc;
+      color: #333;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 18px;
+      transition: background 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .buttons a:hover, .buttons button:hover {
+      background: #ffcccc;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="network"></div>
+
+  <div id="overlay-title">
+    <h1>ENFEKTE</h1>
+  </div>
+
+  <div class="buttons">
+    <div>
+      <input type="text" id="searchInput" placeholder="Kişi ismi gir (ör. Deniz Özkan)">
+      <button onclick="goToUser()">Kişi Ara</button>
+    </div>
+    <a href="/create">Kendi Ağını Oluştur</a>
+    <a href="/login">Ağına Giriş Yap</a>
+  </div>
+
+  <script>
+    function slugify(text) {
+      return text.toString().toLowerCase()
+        .trim()
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ı/g, 'i')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c')
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-');
+    }
+
+    function goToUser() {
+      const input = document.getElementById("searchInput").value;
+      if (input.trim()) {
+        const slug = slugify(input);
+        window.location.href = "/" + slug;
+      }
+    }
+
+    // Grafik
+    const nodes = {{ nodes | tojson }};
+    const edges = {{ edges | tojson }};
+    const container = document.getElementById("network");
+    const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+    const options = {
+      nodes: { shape: "dot", size: 10 },
+      edges: { arrows: 'to', smooth: true },
+      physics: {
+        stabilization: false,
+        barnesHut: {
+          gravitationalConstant: -4000,
+          centralGravity: 0.3,
+          springLength: 150,
+          springConstant: 0.04
+        }
+      }
+    };
+    const network = new vis.Network(container, data, options);
+    setTimeout(() => {
+      network.fit({ animation: { duration: 1000, easingFunction: "easeInOutQuad" } });
+    }, 500);
+  </script>
+</body>
+</html>
+
