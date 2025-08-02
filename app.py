@@ -4,6 +4,16 @@ import os, random, colorsys
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from collections import defaultdict
+import re
+import unicodedata
+
+def slugify(text):
+    text = unicodedata.normalize('NFD', text)
+    text = text.encode('ascii', 'ignore').decode('utf-8')  # aksanlı karakterleri kaldır
+    text = re.sub(r'[^\w\s-]', '', text.lower())
+    text = re.sub(r'\s+', '-', text).strip('-')
+    return re.sub(r'-+', '-', text)
+
 
 app = Flask(__name__)
 app.secret_key = 'super-secret-key'
@@ -140,7 +150,7 @@ def login_redirect():
 def create():
     if request.method == 'POST':
         name = request.form['name']
-        slug = name.lower().replace(' ', '-')
+        slug = slugify(name)  # 🔧 burası önemli
         password = generate_password_hash(request.form['password'])
         with get_db_connection() as conn:
             with conn.cursor() as c:
@@ -152,6 +162,7 @@ def create():
                     return "Bu isim veya slug zaten alınmış."
         return redirect(url_for('login', slug=slug))
     return render_template("create.html")
+
 
 @app.route('/login/<slug>', methods=['GET', 'POST'])
 def login(slug):
