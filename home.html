@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Enfekte</title>
 
   <!-- Vis.js CDN -->
@@ -81,6 +81,18 @@
     .buttons a:hover, .buttons button:hover {
       background: #ffcccc;
     }
+
+    @media (max-width: 600px) {
+      #overlay-title h1 {
+        font-size: 48px;
+      }
+
+      .buttons input[type="text"],
+      .buttons a, .buttons button {
+        width: 90%;
+        font-size: 16px;
+      }
+    }
   </style>
 </head>
 
@@ -102,27 +114,32 @@
 
   <script>
     function slugify(text) {
-      return text.toString().toLowerCase()
-        .trim()
+      return text
+        .toLowerCase()
+        .normalize('NFD')                    // Türkçe karakterleri ayır
+        .replace(/[\u0300-\u036f]/g, '')     // aksanları kaldır
         .replace(/ğ/g, 'g')
         .replace(/ü/g, 'u')
         .replace(/ş/g, 's')
         .replace(/ı/g, 'i')
         .replace(/ö/g, 'o')
         .replace(/ç/g, 'c')
-        .replace(/[^\w\s-]/g, '')
-        .replace(/\s+/g, '-');
+        .replace(/[^\w\s-]/g, '')            // özel karakterleri kaldır
+        .trim()
+        .replace(/\s+/g, '-')                // boşlukları tireye çevir
+        .replace(/-+/g, '-')                 // çift tireleri tek tireye düşür
+        .replace(/^-+|-+$/g, '');            // baş/son tireleri kaldır
     }
 
     function goToUser() {
       const input = document.getElementById("searchInput").value;
       if (input.trim()) {
         const slug = slugify(input);
-        window.location.href = "/" + slug;
+        window.location.href = `/${slug}`;
       }
     }
 
-    // Grafik
+    // Grafik oluşturma
     const nodes = {{ nodes | tojson }};
     const edges = {{ edges | tojson }};
     const container = document.getElementById("network");
