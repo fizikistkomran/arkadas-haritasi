@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>enfekte.org</title>
+  <title>enfekte.co</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
@@ -22,34 +22,6 @@
       flex-direction: row;
       height: 100vh;
     }
-    
-    
-    .tagline {
-  font-size: 14px;
-  color: #666;
-  text-align: center;
-  margin-top: 10px;
-  margin-bottom: 20px;
-  line-height: 1.4;
-}
-
-.footer-note {
-  font-size: 11px;
-  color: #999;
-  text-align: center;
-  margin-top: auto;
-  margin-bottom: 10px;
-}
-
-.footer-note a {
-  color: #4CAF50;
-  text-decoration: none;
-}
-
-.footer-note a:hover {
-  text-decoration: underline;
-}
-
 
     .logo {
       font-size: 32px;
@@ -253,12 +225,7 @@
     }
   </style>
 </head>
-<body> 
-
-
-   <div class="logo">enfekte<span>.org</span></div>
-<p class="tagline">İlişki ağları görselleştirme platformu.</p>
-
+<body>
 
   <!-- Grafikte kişi ara kutusu -->
   <div id="graphSearchBox">
@@ -274,7 +241,7 @@
 
   <!-- Sol panel -->
   <div class="left-panel">
-    <div class="logo">enfekte<span>.org</span></div>
+    <div class="logo">enfekte<span>.co</span></div>
 
     <input type="text" id="searchInput" placeholder="Kişi Adı (ör. Deniz Özkan)" oninput="fetchSuggestions()" />
     <ul id="suggestions"></ul>
@@ -283,12 +250,6 @@
     <button class="btn secondary" onclick="window.location.href='/create'">Kendi Ağını Oluştur</button>
     <button class="btn dark" onclick="window.location.href='/login'">Ağına Giriş Yap</button>
   </div>
-  
-  <footer class="footer-note">
-  Hazırlayan: Utku Onmaz |
-  <a href="https://www.linkedin.com/in/utkuonmaz/" target="_blank">LinkedIn profilim</a>
-</footer>
-
 
   <!-- Grafik alanı -->
   <div class="graph-area">
@@ -391,4 +352,3 @@
 
 </body>
 </html>
-
