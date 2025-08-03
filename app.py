@@ -310,6 +310,7 @@ def user_page(slug):
     nodes_vis, edges_vis = build_graph_multi(rows, [{"id": owner_id, "name": owner_name, "slug": slug}])
     is_owner = session.get('user_id') == owner_id
     return render_template("user_page.html", nodes=nodes_vis, edges=edges_vis, slug=slug, is_owner=is_owner)
+
     
 @app.route('/normalize-history')
 def normalize_history():
