@@ -153,17 +153,18 @@ footer a:hover {
   body {
     flex-direction: column;
     height: auto;
+    align-items: center; /* body içindekileri ortala */
   }
 
   .left-panel {
-    margin-left: 0 !important;
     width: 100% !important;
     padding: 20px;
     height: auto;
     order: 3;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: center; /* içerikleri ortala */
+    margin-left: 0 !important;
   }
 
   .logo {
@@ -173,8 +174,9 @@ footer a:hover {
 
   .description {
     font-size: 18px;
-    padding: 0 10px;
     text-align: center;
+    padding: 0 10px;
+    max-width: 320px;
     word-break: break-word;
   }
 
@@ -184,6 +186,7 @@ footer a:hover {
     width: 100%;
     max-width: 320px;
     margin: 8px auto;
+    display: block;
   }
 
   .graph-area {
@@ -208,9 +211,9 @@ footer a:hover {
     margin-top: 30px;
     text-align: center;
     font-size: 13px;
+    max-width: 320px;
   }
 }
-
 
   </style>
 </head>
