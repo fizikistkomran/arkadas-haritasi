@@ -192,17 +192,8 @@ def fix_visitor_ids():
             conn.commit()
     return "visitor_id alanları eşleştirildi!"
 
-@app.route('/normalize-db')
-def normalize_db():
-    with get_db_connection() as conn:
-        with conn.cursor() as c:
-            c.execute("UPDATE connections SET visitor_name = LOWER(visitor_name)")
-            c.execute("UPDATE connections SET connector_name = LOWER(connector_name)")
-            conn.commit()
-    return "Veritabanındaki isimler normalize edildi."
-    
-@app.route('/normalize-users')
-def normalize_users():
+@app.route('/normalize-all')
+def normalize_all():
     def normalize(name):
         mapping = {
             'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
@@ -211,17 +202,35 @@ def normalize_users():
         }
         for src, target in mapping.items():
             name = name.replace(src, target)
-        return name.lower().strip()
+        return re.sub(r'[^\w\s-]', '', name.lower().strip())
 
     with get_db_connection() as conn:
         with conn.cursor() as c:
+            # users.name normalize
             c.execute("SELECT id, name FROM users")
             users = c.fetchall()
             for user in users:
-                normalized = normalize(user['name'])
-                c.execute("UPDATE users SET name = %s WHERE id = %s", (normalized, user['id']))
+                norm_name = normalize(user['name'])
+                c.execute("UPDATE users SET name = %s WHERE id = %s", (norm_name, user['id']))
+
+            # connections.visitor_name normalize
+            c.execute("SELECT id, visitor_name FROM connections")
+            visitors = c.fetchall()
+            for v in visitors:
+                norm_visitor = normalize(v['visitor_name'])
+                c.execute("UPDATE connections SET visitor_name = %s WHERE id = %s", (norm_visitor, v['id']))
+
+            # connections.connector_name normalize
+            c.execute("SELECT id, connector_name FROM connections WHERE connector_name IS NOT NULL")
+            connectors = c.fetchall()
+            for conn_row in connectors:
+                norm_connector = normalize(conn_row['connector_name'])
+                c.execute("UPDATE connections SET connector_name = %s WHERE id = %s", (norm_connector, conn_row['id']))
+
             conn.commit()
-    return "Kullanıcı isimleri normalize edildi."
+
+    return "Tüm kullanıcı ve bağlantı isimleri normalize edildi."
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -270,6 +279,46 @@ def user_page(slug):
     nodes_vis, edges_vis = build_graph_multi(rows, [{"id": owner_id, "name": owner_name, "slug": slug}])
     is_owner = session.get('user_id') == owner_id
     return render_template("user_page.html", nodes=nodes_vis, edges=edges_vis, slug=slug, is_owner=is_owner)
+    
+@app.route('/normalize-history')
+def normalize_history():
+    def normalize(name):
+        mapping = {
+            'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
+            'Ç': 'c', 'Ğ': 'g', 'İ': 'i', 'Ö': 'o', 'Ş': 's', 'Ü': 'u',
+            'I': 'i'
+        }
+        for src, target in mapping.items():
+            name = name.replace(src, target)
+        return re.sub(r'[^\w\s-]', '', name.lower().strip())
+
+    with get_db_connection() as conn:
+        with conn.cursor() as c:
+            # USERS normalize
+            c.execute("SELECT id, name FROM users")
+            users = c.fetchall()
+            for user in users:
+                normalized_name = normalize(user['name'])
+                c.execute("UPDATE users SET name = %s WHERE id = %s", (normalized_name, user['id']))
+
+            # CONNECTIONS - visitor_name normalize
+            c.execute("SELECT id, visitor_name FROM connections")
+            visitors = c.fetchall()
+            for row in visitors:
+                normalized_visitor = normalize(row['visitor_name'])
+                c.execute("UPDATE connections SET visitor_name = %s WHERE id = %s", (normalized_visitor, row['id']))
+
+            # CONNECTIONS - connector_name normalize
+            c.execute("SELECT id, connector_name FROM connections WHERE connector_name IS NOT NULL")
+            connectors = c.fetchall()
+            for row in connectors:
+                normalized_connector = normalize(row['connector_name'])
+                c.execute("UPDATE connections SET connector_name = %s WHERE id = %s", (normalized_connector, row['id']))
+
+            conn.commit()
+
+    return "Geçmişe dönük tüm kullanıcı ve bağlantı verileri normalize edildi."
+
 
 @app.route('/edit/<slug>', methods=['GET', 'POST'])
 def edit_page(slug):
