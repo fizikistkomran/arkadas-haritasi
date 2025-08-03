@@ -200,6 +200,28 @@ def normalize_db():
             c.execute("UPDATE connections SET connector_name = LOWER(connector_name)")
             conn.commit()
     return "Veritabanındaki isimler normalize edildi."
+    
+@app.route('/normalize-users')
+def normalize_users():
+    def normalize(name):
+        mapping = {
+            'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
+            'Ç': 'c', 'Ğ': 'g', 'İ': 'i', 'Ö': 'o', 'Ş': 's', 'Ü': 'u',
+            'I': 'i'
+        }
+        for src, target in mapping.items():
+            name = name.replace(src, target)
+        return name.lower().strip()
+
+    with get_db_connection() as conn:
+        with conn.cursor() as c:
+            c.execute("SELECT id, name FROM users")
+            users = c.fetchall()
+            for user in users:
+                normalized = normalize(user['name'])
+                c.execute("UPDATE users SET name = %s WHERE id = %s", (normalized, user['id']))
+            conn.commit()
+    return "Kullanıcı isimleri normalize edildi."
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
