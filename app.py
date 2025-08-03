@@ -159,6 +159,21 @@ def create():
     return render_template("create.html")
     
     
+@app.route('/merge-connectors')
+def merge_connectors():
+    with get_db_connection() as conn:
+        with conn.cursor() as c:
+            c.execute('''
+                UPDATE connections
+                SET connector_id = users.id
+                FROM users
+                WHERE connections.connector_name = users.name
+            ''')
+            conn.commit()
+    return "Connector ID'ler başarıyla güncellendi."
+
+    
+    
 @app.route('/fix-visitor-ids')
 def fix_visitor_ids():
     with get_db_connection() as conn:
