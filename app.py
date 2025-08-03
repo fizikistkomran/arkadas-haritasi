@@ -143,19 +143,24 @@ def create():
         return redirect(url_for('login', slug=slug))
     return render_template("create.html")
 
-@app.route('/login/<slug>', methods=['GET', 'POST'])
-def login(slug):
+@app.route('/login', methods=['GET', 'POST'])
+def login():
     if request.method == 'POST':
+        name = request.form['name']
         password = request.form['password']
+        slug = slugify(name)
+
         with get_db_connection() as conn:
             with conn.cursor() as c:
                 c.execute("SELECT id, password FROM users WHERE slug = %s", (slug,))
-                row = c.fetchone()
-                if row and check_password_hash(row['password'], password):
-                    session['user_id'] = row['id']
+                user = c.fetchone()
+                if user and check_password_hash(user['password'], password):
+                    session['user_id'] = user['id']
                     return redirect(url_for('edit_page', slug=slug))
-        return "Şifre hatalı."
-    return render_template("login.html", slug=slug)
+                else:
+                    return "İsim veya şifre hatalı."
+    return render_template("login.html")
+
 
 @app.route('/<slug>', methods=['GET', 'POST'])
 def user_page(slug):
