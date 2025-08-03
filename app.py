@@ -70,12 +70,32 @@ def random_color():
     return f'rgb({int(r*255)}, {int(g*255)}, {int(b*255)})'
 
 def mix_colors(colors):
-    if not colors: return "#cccccc"
-    r = sum(int(col[4:-1].split(',')[0]) for col in colors)
-    g = sum(int(col[4:-1].split(',')[1]) for col in colors)
-    b = sum(int(col[4:-1].split(',')[2]) for col in colors)
-    n = len(colors)
-    return f"rgb({r//n}, {g//n}, {b//n})"
+    if not colors:
+        return "#cccccc"
+
+    total_r, total_g, total_b = 0, 0, 0
+    valid_count = 0
+
+    for col in colors:
+        try:
+            if col.startswith("rgb(") and col.endswith(")"):
+                r, g, b = map(int, col[4:-1].split(','))
+                total_r += r
+                total_g += g
+                total_b += b
+                valid_count += 1
+        except Exception:
+            continue
+
+    if valid_count == 0:
+        return "#cccccc"
+
+    avg_r = total_r // valid_count
+    avg_g = total_g // valid_count
+    avg_b = total_b // valid_count
+
+    return f"rgb({avg_r}, {avg_g}, {avg_b})"
+
 
 def build_graph_multi(rows, user_rows):
     owner_to_rows = defaultdict(list)
@@ -130,16 +150,8 @@ def build_graph_multi(rows, user_rows):
     
 def fixed_color(user_id):
     palette = [
-        "#4CAF50",  # yeşil
-        "#81C784",  # açık yeşil
-        "#66BB6A",  # yeşil tonu
-        "#388E3C",  # koyu yeşil
-        "#2E7D32",  # zeytin yeşili
-        "#1B5E20",  # orman yeşili
-        "#A5D6A7",  # pastel yeşil
-        "#43A047",  # canlı yeşil
-        "#00796B",  # mavi-yeşil
-        "#33691E",  # toprak yeşili
+        "#4CAF50", "#81C784", "#66BB6A", "#388E3C", "#2E7D32",
+        "#1B5E20", "#A5D6A7", "#43A047", "#00796B", "#33691E"
     ]
     return palette[user_id % len(palette)]
 
