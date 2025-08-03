@@ -8,6 +8,7 @@ from collections import defaultdict
 app = Flask(__name__)
 app.secret_key = 'super-secret-key'
 
+# Slugify fonksiyonu
 def slugify(text):
     mapping = {
         'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
@@ -20,6 +21,7 @@ def slugify(text):
     text = re.sub(r'\s+', '-', text)
     return text.strip('-')
 
+# Veritabanı bağlantısı
 def get_db_connection():
     return psycopg2.connect(
         dbname="railway",
@@ -30,6 +32,7 @@ def get_db_connection():
         cursor_factory=RealDictCursor
     )
 
+# Tabloları oluştur
 def init_db():
     with get_db_connection() as conn:
         with conn.cursor() as c:
@@ -52,6 +55,7 @@ def init_db():
             ''')
         conn.commit()
 
+# Renkler
 def random_color():
     h, s, v = random.random(), 0.5 + random.random() * 0.5, 0.7 + random.random() * 0.3
     r, g, b = colorsys.hsv_to_rgb(h, s, v)
@@ -65,10 +69,12 @@ def mix_colors(colors):
     n = len(colors)
     return f"rgb({r//n}, {g//n}, {b//n})"
 
+# Grafiği oluştur
 def build_graph_multi(rows, user_rows):
     owner_to_rows = defaultdict(list)
     for row in rows:
-        owner_to_rows[row['owner_id']].append((row['visitor_name'], row['connection_type'], row['connector_name']))
+        if 'owner_id' in row:
+            owner_to_rows[row['owner_id']].append((row['visitor_name'], row['connection_type'], row['connector_name']))
 
     user_id_to_name = {u['id']: u['name'] for u in user_rows}
     user_name_to_slug = {u['name']: u['slug'] for u in user_rows}
@@ -78,7 +84,7 @@ def build_graph_multi(rows, user_rows):
     all_edges = set()
 
     for owner_id, conns in owner_to_rows.items():
-        owner_name = user_id_to_name[owner_id]
+        owner_name = user_id_to_name.get(owner_id, f"user_{owner_id}")
         name_to_connector = {v: (t, c) for v, t, c in conns}
         for visitor in name_to_connector:
             person, chain = visitor, []
@@ -168,47 +174,6 @@ def create():
         return redirect(url_for('login', slug=slug))
     return render_template("create.html")
 
-@app.route('/login/<slug>', methods=['GET', 'POST'])
-def login(slug):
-    if request.method == 'POST':
-        password = request.form['password']
-        with get_db_connection() as conn:
-            with conn.cursor() as c:
-                c.execute("SELECT id, password FROM users WHERE slug = %s", (slug,))
-                row = c.fetchone()
-                if row and check_password_hash(row['password'], password):
-                    session['user_id'] = row['id']
-                    return redirect(url_for('edit_page', slug=slug))
-        return "Şifre hatalı."
-    return render_template("login.html", slug=slug)
-
-@app.route('/<slug>', methods=['GET', 'POST'])
-def user_page(slug):
-    with get_db_connection() as conn:
-        with conn.cursor() as c:
-            c.execute("SELECT id, name FROM users WHERE slug = %s", (slug,))
-            user = c.fetchone()
-            if not user:
-                return "Kullanıcı bulunamadı"
-            owner_id, owner_name = user['id'], user['name']
-            if request.method == 'POST' and session.get('user_id') != owner_id:
-                visitor_name = request.form['name']
-                connection_type = request.form['type']
-                connector_name = request.form.get('connector')
-                c.execute("SELECT visitor_name FROM connections WHERE owner_id = %s AND visitor_name = %s",
-                          (owner_id, visitor_name))
-                if c.fetchone():
-                    return f"{visitor_name} zaten eklenmiş."
-                c.execute("INSERT INTO connections (owner_id, visitor_name, connection_type, connector_name) VALUES (%s, %s, %s, %s)",
-                          (owner_id, visitor_name, connection_type, connector_name))
-                conn.commit()
-                return redirect(url_for('user_page', slug=slug))
-            c.execute("SELECT visitor_name, connection_type, connector_name FROM connections WHERE owner_id = %s", (owner_id,))
-            rows = c.fetchall()
-    nodes_vis, edges_vis = build_graph_multi(rows, [{"id": owner_id, "name": owner_name, "slug": slug}])
-    is_owner = session.get('user_id') == owner_id
-    return render_template("user_page.html", nodes=nodes_vis, edges=edges_vis, slug=slug, is_owner=is_owner)
-
 @app.route('/edit/<slug>', methods=['GET', 'POST'])
 def edit_page(slug):
     with get_db_connection() as conn:
@@ -226,11 +191,46 @@ def edit_page(slug):
                 if conn_id:
                     c.execute("DELETE FROM connections WHERE id = %s", (conn_id,))
                     conn.commit()
-            c.execute("SELECT id, visitor_name, connection_type, connector_name FROM connections WHERE owner_id = %s ORDER BY id DESC", (owner_id,))
+            c.execute("""
+                SELECT id, visitor_name, connection_type, connector_name 
+                FROM connections 
+                WHERE owner_id = %s
+                ORDER BY id DESC
+            """, (owner_id,))
             connections = c.fetchall()
     return render_template("edit.html", slug=slug, name=owner_name, connections=connections)
 
-# DB başlat
+@app.route('/<slug>', methods=['GET', 'POST'])
+def user_page(slug):
+    with get_db_connection() as conn:
+        with conn.cursor() as c:
+            c.execute("SELECT id, name FROM users WHERE slug = %s", (slug,))
+            user = c.fetchone()
+            if not user:
+                return "Kullanıcı bulunamadı"
+            owner_id, owner_name = user['id'], user['name']
+            if request.method == 'POST' and session.get('user_id') != owner_id:
+                try:
+                    visitor_name = request.form['name']
+                    connection_type = request.form['type']
+                    connector_name = request.form.get('connector', '')
+                    c.execute("SELECT visitor_name FROM connections WHERE owner_id = %s AND visitor_name = %s",
+                              (owner_id, visitor_name))
+                    if c.fetchone():
+                        return f"{visitor_name} zaten eklenmiş."
+                    c.execute("INSERT INTO connections (owner_id, visitor_name, connection_type, connector_name) VALUES (%s, %s, %s, %s)",
+                              (owner_id, visitor_name, connection_type, connector_name))
+                    conn.commit()
+                    return redirect(url_for('user_page', slug=slug))
+                except Exception as e:
+                    return f"Bağlantı eklenirken hata oluştu: {str(e)}"
+            c.execute("SELECT visitor_name, connection_type, connector_name FROM connections WHERE owner_id = %s", (owner_id,))
+            rows = c.fetchall()
+    nodes_vis, edges_vis = build_graph_multi(rows, [{"id": owner_id, "name": owner_name, "slug": slug}])
+    is_owner = session.get('user_id') == owner_id
+    return render_template("user_page.html", nodes=nodes_vis, edges=edges_vis, slug=slug, is_owner=is_owner)
+
+# Başlat
 init_db()
 
 if __name__ == '__main__':
