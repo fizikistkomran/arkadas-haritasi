@@ -20,15 +20,19 @@
             flex-direction: column;
             align-items: center;
             background-color: #fff;
-            display: flex;
-            justify-content: center; /* dikey ortalama */
-            height: 150vh;
+            justify-content: center;
+            height: 50vh;
+            margin-left: 15px; /* 1 cm sağa kaydırma */
+            position: relative;
         }
 
         .logo {
             font-size: 32px;
             font-weight: bold;
-            margin-bottom: 350px;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            margin-bottom: 0;
         }
 
         .logo span {
@@ -104,14 +108,12 @@
             right: 0;
             bottom: 0;
         }
-        
     </style>
 </head>
 <body>
 
 <div class="left-panel">
-<div class="logo">enfekte<span>.org</span></div>
-    
+    <div class="logo">enfekte<span>.org</span></div>
 
     <input type="text" id="searchInput" placeholder="Kişi Adı (ör. Deniz Özkan)" oninput="fetchSuggestions()">
     <ul id="suggestions"></ul>
