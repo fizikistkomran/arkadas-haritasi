@@ -154,6 +154,11 @@
 </head>
 <body>
 
+<div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 999;">
+    <input type="text" id="graphSearchInput" placeholder="Grafikte Kişi Ara" style="padding: 10px 18px; font-size: 16px; border-radius: 20px; border: 2px solid #ccc; width: 240px;" onkeydown="if(event.key === 'Enter') zoomToNodeByName()">
+</div>
+
+
 <div class="left-panel">
     <div class="logo">enfekte<span>.org</span></div>
 
@@ -202,6 +207,30 @@
                 });
             });
     }
+    
+    
+    function zoomToNodeByName() {
+    const input = document.getElementById("graphSearchInput");
+    const query = input.value.trim().toLowerCase();
+
+    if (!query || query.length < 2) return;
+
+    // nodesData tüm node'lar, label'lara bakıyoruz
+    const match = nodesData.find(n => n.label.toLowerCase().includes(query));
+    if (match) {
+        network.focus(match.id, {
+            scale: 1.5,
+            animation: {
+                duration: 800,
+                easingFunction: "easeInOutQuad"
+            }
+        });
+        input.style.borderColor = "#4CAF50";
+    } else {
+        input.style.borderColor = "#e74c3c"; // kırmızı çerçeve
+    }
+}
+
 
     function goToPerson() {
         const name = document.getElementById("searchInput").value;
@@ -220,4 +249,3 @@
 
 </body>
 </html>
-
