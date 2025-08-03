@@ -125,6 +125,21 @@ def home():
             user_rows = c.fetchall()
     nodes, edges = build_graph_multi(conn_rows, user_rows)
     return render_template("home.html", nodes=nodes, edges=edges)
+    
+    
+@app.route('/suggest')
+def suggest():
+    query = request.args.get('q', '').lower()
+    if not query:
+        return jsonify(results=[])
+    
+    with get_db_connection() as conn:
+        with conn.cursor() as c:
+            c.execute("SELECT name, slug FROM users WHERE LOWER(name) LIKE %s LIMIT 10", (f"%{query}%",))
+            users = c.fetchall()
+
+    return jsonify(results=users)
+
 
 @app.route('/create', methods=['GET', 'POST'])
 def create():
