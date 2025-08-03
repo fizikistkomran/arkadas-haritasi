@@ -155,8 +155,14 @@
 <body>
 
 <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 999;">
-    <input type="text" id="graphSearchInput" placeholder="Grafikte Kişi Ara" style="padding: 10px 18px; font-size: 16px; border-radius: 20px; border: 2px solid #ccc; width: 240px;" onkeydown="if(event.key === 'Enter') zoomToNodeByName()">
+  <input type="text" id="graphSearchInput" placeholder="Grafikte Kişi Ara" 
+         style="padding: 10px 18px; font-size: 16px; border-radius: 20px; border: 2px solid #ccc; width: 260px;" 
+         oninput="filterGraphSuggestions()" 
+         onkeydown="if(event.key === 'Enter') zoomToGraphName()">
+  <ul id="graphSuggestions" 
+      style="list-style:none; padding:0; margin:4px 0 0; background:#fff; border-radius:8px; box-shadow:0 0 6px rgba(0,0,0,0.1); max-height:150px; overflow-y:auto;"></ul>
 </div>
+
 
 
 <div class="left-panel">
@@ -180,13 +186,26 @@
     const nodes = {{ nodes | tojson }};
     const edges = {{ edges | tojson }};
     const container = document.getElementById('graph');
+    let network;
 
-    const network = new vis.Network(container, { nodes, edges }, {
-        nodes: { shape: 'dot', size: 12, font: { size: 14 } },
-        edges: { arrows: 'to', color: '#aaa' },
-        physics: { stabilization: false }
+    // Ağı oluştur
+    network = new vis.Network(container, { nodes, edges }, {
+        nodes: {
+            shape: 'dot',
+            size: 12,
+            font: { size: 14 },
+            borderWidth: 1
+        },
+        edges: {
+            arrows: 'to',
+            color: '#aaa'
+        },
+        physics: {
+            stabilization: false
+        }
     });
 
+    // Kişi Git (sol panel)
     function fetchSuggestions() {
         const query = document.getElementById("searchInput").value;
         if (query.length < 2) {
@@ -207,30 +226,6 @@
                 });
             });
     }
-    
-    
-    function zoomToNodeByName() {
-    const input = document.getElementById("graphSearchInput");
-    const query = input.value.trim().toLowerCase();
-
-    if (!query || query.length < 2) return;
-
-    // nodesData tüm node'lar, label'lara bakıyoruz
-    const match = nodesData.find(n => n.label.toLowerCase().includes(query));
-    if (match) {
-        network.focus(match.id, {
-            scale: 1.5,
-            animation: {
-                duration: 800,
-                easingFunction: "easeInOutQuad"
-            }
-        });
-        input.style.borderColor = "#4CAF50";
-    } else {
-        input.style.borderColor = "#e74c3c"; // kırmızı çerçeve
-    }
-}
-
 
     function goToPerson() {
         const name = document.getElementById("searchInput").value;
@@ -245,7 +240,58 @@
                 }
             });
     }
+
+    // Grafikte Kişi Ara (üstteki kutu)
+    function filterGraphSuggestions() {
+        const input = document.getElementById("graphSearchInput");
+        const query = input.value.toLowerCase();
+        const ul = document.getElementById("graphSuggestions");
+        ul.innerHTML = "";
+
+        if (query.length < 2) return;
+
+        const matches = nodes.filter(n => n.label.toLowerCase().includes(query));
+        matches.forEach(node => {
+            const li = document.createElement("li");
+            li.textContent = node.label;
+            li.style.padding = "8px 12px";
+            li.style.cursor = "pointer";
+            li.style.borderBottom = "1px solid #eee";
+            li.onclick = () => {
+                input.value = node.label;
+                ul.innerHTML = "";
+                focusNode(node.id);
+            };
+            ul.appendChild(li);
+        });
+    }
+
+    function zoomToGraphName() {
+        const input = document.getElementById("graphSearchInput");
+        const query = input.value.toLowerCase().trim();
+        if (!query) return;
+
+        const match = nodes.find(n => n.label.toLowerCase().includes(query));
+        if (match) {
+            focusNode(match.id);
+        } else {
+            input.style.borderColor = "#e74c3c";
+        }
+    }
+
+    function focusNode(nodeId) {
+        if (!network) return;
+        network.focus(nodeId, {
+            scale: 1.6,
+            animation: {
+                duration: 800,
+                easingFunction: "easeInOutQuad"
+            }
+        });
+        document.getElementById("graphSearchInput").style.borderColor = "#4CAF50";
+    }
 </script>
+
 
 </body>
 </html>
