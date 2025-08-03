@@ -1,14 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-import os, random, colorsys
+import os, random, colorsys, re
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from collections import defaultdict
-import re
-import unicodedata
 
-import re
+app = Flask(__name__)
+app.secret_key = 'super-secret-key'
 
+# Slugify fonksiyonu
 def slugify(text):
     mapping = {
         'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
@@ -17,16 +17,11 @@ def slugify(text):
     for src, target in mapping.items():
         text = text.replace(src, target)
     text = text.lower()
-    text = re.sub(r'[^\w\s-]', '', text)  # noktalama kaldır
-    text = re.sub(r'\s+', '-', text)      # boşlukları - yap
+    text = re.sub(r'[^\w\s-]', '', text)  # Noktalama kaldır
+    text = re.sub(r'\s+', '-', text)      # Boşlukları - yap
     return text.strip('-')
 
-
-
-app = Flask(__name__)
-app.secret_key = 'super-secret-key'
-
-# Veritabanı bağlantı fonksiyonu
+# Veritabanı bağlantı
 def get_db_connection():
     return psycopg2.connect(
         dbname="railway",
@@ -37,8 +32,7 @@ def get_db_connection():
         cursor_factory=RealDictCursor
     )
 
-# Tablo oluşturma
-
+# Tabloları oluştur
 def init_db():
     with get_db_connection() as conn:
         with conn.cursor() as c:
@@ -61,7 +55,7 @@ def init_db():
             ''')
         conn.commit()
 
-# Renk hesaplama yardımcıları
+# Renkler
 def random_color():
     h, s, v = random.random(), 0.5 + random.random() * 0.5, 0.7 + random.random() * 0.3
     r, g, b = colorsys.hsv_to_rgb(h, s, v)
@@ -69,15 +63,13 @@ def random_color():
 
 def mix_colors(colors):
     if not colors: return "#cccccc"
-    r, g, b = 0, 0, 0
-    for col in colors:
-        vals = col[4:-1].split(',')
-        r += int(vals[0]); g += int(vals[1]); b += int(vals[2])
+    r = sum(int(col[4:-1].split(',')[0]) for col in colors)
+    g = sum(int(col[4:-1].split(',')[1]) for col in colors)
+    b = sum(int(col[4:-1].split(',')[2]) for col in colors)
     n = len(colors)
     return f"rgb({r//n}, {g//n}, {b//n})"
 
-# Grafiği oluştur
-
+# Ana sayfa grafiği
 def build_graph_multi(rows, user_rows):
     owner_to_rows = defaultdict(list)
     for row in rows:
@@ -126,7 +118,6 @@ def build_graph_multi(rows, user_rows):
     edges_vis = [{"from": name_to_id[f], "to": name_to_id[t]} for f, t in all_edges]
     return nodes_vis, edges_vis
 
-# Ana sayfa
 @app.route('/')
 def home():
     with get_db_connection() as conn:
@@ -138,12 +129,23 @@ def home():
     nodes, edges = build_graph_multi(conn_rows, user_rows)
     return render_template("home.html", nodes=nodes, edges=edges)
 
-# Giriş ve kayıt rotaları
+@app.route('/suggest')
+def suggest():
+    query = request.args.get('q', '').lower()
+    if not query:
+        return jsonify(results=[])
+    with get_db_connection() as conn:
+        with conn.cursor() as c:
+            c.execute("SELECT name, slug FROM users WHERE LOWER(name) LIKE %s LIMIT 10", (f"%{query}%",))
+            users = c.fetchall()
+    return jsonify(results=users)
+
 @app.route('/login', methods=['GET', 'POST'])
 def login_redirect():
     if request.method == 'POST':
-        name, password = request.form['name'], request.form['password']
-        slug = name.lower().replace(' ', '-')
+        name = request.form['name']
+        password = request.form['password']
+        slug = slugify(name)
         with get_db_connection() as conn:
             with conn.cursor() as c:
                 c.execute("SELECT id, password FROM users WHERE slug = %s", (slug,))
@@ -158,7 +160,7 @@ def login_redirect():
 def create():
     if request.method == 'POST':
         name = request.form['name']
-        slug = slugify(name)  # 🔧 burası önemli
+        slug = slugify(name)
         password = generate_password_hash(request.form['password'])
         with get_db_connection() as conn:
             with conn.cursor() as c:
@@ -170,7 +172,6 @@ def create():
                     return "Bu isim veya slug zaten alınmış."
         return redirect(url_for('login', slug=slug))
     return render_template("create.html")
-
 
 @app.route('/login/<slug>', methods=['GET', 'POST'])
 def login(slug):
@@ -186,31 +187,7 @@ def login(slug):
         return "Şifre hatalı."
     return render_template("login.html", slug=slug)
 
-# Kullanıcı sayfası ve form
-def get_user_graph(owner_id, owner_name, rows):
-    name_to_connector = {r['visitor_name']: (r['connection_type'], r['connector_name']) for r in rows}
-    edges, nodes = [], set()
-
-    for visitor in name_to_connector:
-        person, chain = visitor, []
-        while True:
-            ctype, connector = name_to_connector.get(person, (None, None))
-            if connector:
-                chain.append((person, connector))
-                person = connector
-            else:
-                break
-        edges.append((chain[-1][1], owner_name) if chain else (visitor, owner_name))
-        edges += chain
-
-    for f, t in edges: nodes.update([f, t])
-    nodes.add(owner_name)
-    name_to_id = {name: i + 1 for i, name in enumerate(sorted(nodes))}
-    nodes_vis = [{"id": name_to_id[n], "label": n, "color": "lightgreen" if n == owner_name else None} for n in name_to_id]
-    edges_vis = [{"from": name_to_id[f], "to": name_to_id[t]} for f, t in edges]
-    return nodes_vis, edges_vis
-
-@app.route('/<slug>', methods=['GET', 'POST'])
+@app.route('/edit/<slug>', methods=['GET', 'POST'])
 def user_page(slug):
     with get_db_connection() as conn:
         with conn.cursor() as c:
@@ -219,7 +196,6 @@ def user_page(slug):
             if not user:
                 return "Kullanıcı bulunamadı"
             owner_id, owner_name = user['id'], user['name']
-
             if request.method == 'POST' and session.get('user_id') != owner_id:
                 visitor_name = request.form['name']
                 connection_type = request.form['type']
@@ -232,36 +208,49 @@ def user_page(slug):
                           (owner_id, visitor_name, connection_type, connector_name))
                 conn.commit()
                 return redirect(url_for('user_page', slug=slug))
-
             c.execute("SELECT visitor_name, connection_type, connector_name FROM connections WHERE owner_id = %s", (owner_id,))
             rows = c.fetchall()
-
-    nodes_vis, edges_vis = get_user_graph(owner_id, owner_name, rows)
+    nodes_vis, edges_vis = build_graph_multi(rows, [{"id": owner_id, "name": owner_name, "slug": slug}])
     is_owner = session.get('user_id') == owner_id
     return render_template("user_page.html", nodes=nodes_vis, edges=edges_vis, slug=slug, is_owner=is_owner)
 
 @app.route('/edit/<slug>', methods=['GET', 'POST'])
+@app.route('/edit/<slug>', methods=['GET', 'POST'])
 def edit_page(slug):
     with get_db_connection() as conn:
         with conn.cursor() as c:
-            c.execute("SELECT id FROM users WHERE slug = %s", (slug,))
+            # Kullanıcıyı getir
+            c.execute("SELECT id, name FROM users WHERE slug = %s", (slug,))
             user = c.fetchone()
             if not user:
                 return "Kullanıcı bulunamadı"
+
             owner_id = user['id']
+            owner_name = user['name']
+
+            # Giriş kontrolü
             if session.get("user_id") != owner_id:
                 return "Yetkisiz giriş"
 
+            # Silme işlemi
             if request.method == 'POST':
                 conn_id = request.form.get("delete_id")
-                c.execute("DELETE FROM connections WHERE id = %s", (conn_id,))
-                conn.commit()
+                if conn_id:
+                    c.execute("DELETE FROM connections WHERE id = %s", (conn_id,))
+                    conn.commit()
 
-            c.execute("SELECT id, visitor_name, connection_type, connector_name FROM connections WHERE owner_id = %s", (owner_id,))
+            # Bağlantıları çek
+            c.execute("""
+                SELECT id, visitor_name, connection_type, connector_name 
+                FROM connections 
+                WHERE owner_id = %s
+                ORDER BY id DESC
+            """, (owner_id,))
             connections = c.fetchall()
-    return render_template("edit.html", slug=slug, connections=connections)
 
-# Uygulamayı başlat
+    return render_template("edit.html", slug=slug, name=owner_name, connections=connections)
+
+# Başlat
 init_db()
 
 if __name__ == '__main__':

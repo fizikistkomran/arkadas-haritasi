@@ -1,49 +1,96 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- Bootstrap 5 CSS -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bağlantıları Düzenle — {{ name }}</title>
 
-  <title>Bağlantıları Düzenle — {{ slug }}</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding-top: 40px;
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+    }
+
+    .home-button {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 999;
+      background-color: #e0e0e0;
+      padding: 8px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      color: #000;
+    }
+
+    table td, table th {
+      vertical-align: middle !important;
+    }
+
+    @media (max-width: 576px) {
+      .table-responsive {
+        font-size: 14px;
+      }
+    }
+  </style>
 </head>
 <body>
-<a href="/" class="home-button">Ana Sayfa</a>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <a href="/" class="home-button">🏠 Ana Sayfa</a>
 
-  <h2>🔧 {{ slug }} — Bağlantıları Düzenle</h2>
+  <div class="container">
+    <h2 class="mb-3">🔧 {{ name }} — Bağlantılarını Düzenle</h2>
+    <a href="/{{ slug }}" class="btn btn-secondary mb-4">← Profiline Geri Dön</a>
 
-  <a href="/{{ slug }}">← Geri Dön</a>
-  <hr>
+    {% if connections %}
+      <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Ziyaretçi Adı</th>
+              <th>Tanışma Türü</th>
+              <th>Tanıştıran</th>
+              <th>Sil</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for conn in connections %}
+              <tr>
+                <td>{{ conn.visitor_name }}</td>
+                <td>{{ conn.connection_type }}</td>
+                <td>{{ conn.connector_name or '-' }}</td>
+                <td>
+                  <form method="POST" onsubmit="return confirm('Bu bağlantıyı silmek istediğinize emin misiniz?')">
+                    <input type="hidden" name="delete_id" value="{{ conn.id }}">
+                    <button type="submit" class="btn btn-danger btn-sm">🗑️ Sil</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted">Henüz bağlantı eklenmemiş.</p>
+    {% endif %}
+  </div>
 
-  {% if connections %}
-    <table border="1" cellpadding="8">
-      <tr>
-        <th>Ziyaretçi Adı</th>
-        <th>Tanışma Türü</th>
-        <th>Tanıştıran</th>
-        <th>Sil</th>
-      </tr>
-      {% for conn in connections %}
-      <tr>
-        <td>{{ conn[1] }}</td>
-        <td>{{ conn[2] }}</td>
-        <td>{{ conn[3] or '-' }}</td>
-        <td>
-          <form method="POST" style="display:inline;">
-            <input type="hidden" name="delete_id" value="{{ conn[0] }}">
-            <button type="submit" onclick="return confirm('Silmek istediğine emin misin?')">🗑️</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </table>
-  {% else %}
-    <p>Henüz bağlantı yok.</p>
-  {% endif %}
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
 

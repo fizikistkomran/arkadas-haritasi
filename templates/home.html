@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Enfekte</title>
 
   <!-- Vis.js CDN -->
@@ -40,7 +40,7 @@
 
     #overlay-title h1 {
       font-size: 80px;
-      color: rgba(255, 0, 0, 0.3);
+      color: rgba(0, 255, 0, 0.3);
       font-weight: 900;
       margin: 0;
       text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
@@ -81,6 +81,18 @@
     .buttons a:hover, .buttons button:hover {
       background: #ffcccc;
     }
+
+    @media (max-width: 600px) {
+      #overlay-title h1 {
+        font-size: 48px;
+      }
+
+      .buttons input[type="text"],
+      .buttons a, .buttons button {
+        width: 90%;
+        font-size: 16px;
+      }
+    }
   </style>
 </head>
 
@@ -93,7 +105,9 @@
 
   <div class="buttons">
     <div>
-      <input type="text" id="searchInput" placeholder="Kişi ismi gir (ör. Deniz Özkan)">
+      <input type="text" id="searchInput" placeholder="Kişi ismi gir (ör. Mustafa)" oninput="fetchSuggestions()">
+<ul id="suggestions" style="list-style:none; padding:0; margin-top:5px; max-height: 120px; overflow-y: auto;"></ul>
+
       <button onclick="goToUser()">Kişi Ara</button>
     </div>
     <a href="/create">Kendi Ağını Oluştur</a>
@@ -102,27 +116,50 @@
 
   <script>
     function slugify(text) {
-      return text.toString().toLowerCase()
-        .trim()
-        .replace(/ğ/g, 'g')
-        .replace(/ü/g, 'u')
-        .replace(/ş/g, 's')
-        .replace(/ı/g, 'i')
-        .replace(/ö/g, 'o')
-        .replace(/ç/g, 'c')
-        .replace(/[^\w\s-]/g, '')
-        .replace(/\s+/g, '-');
-    }
+  return text.toString().toLowerCase()
+    .trim()
+    .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
+    .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
+    .replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+}
 
+function fetchSuggestions() {
+  const query = document.getElementById("searchInput").value;
+  if (query.length < 2) {
+    document.getElementById("suggestions").innerHTML = "";
+    return;
+  }
+
+  fetch(`/suggest?q=${encodeURIComponent(query)}`)
+    .then(response => response.json())
+    .then(data => {
+      const list = data.results;
+      const ul = document.getElementById("suggestions");
+      ul.innerHTML = "";
+      list.forEach(person => {
+        const li = document.createElement("li");
+        li.textContent = person.name;
+        li.style.cursor = "pointer";
+        li.style.padding = "6px 12px";
+        li.style.background = "#ffffffcc";
+        li.style.marginTop = "4px";
+        li.style.borderRadius = "6px";
+        li.onclick = () => {
+          window.location.href = "/" + person.slug;
+        };
+        ul.appendChild(li);
+      });
+    });
+}
     function goToUser() {
-      const input = document.getElementById("searchInput").value;
-      if (input.trim()) {
-        const slug = slugify(input);
-        window.location.href = "/" + slug;
-      }
-    }
+  const input = document.getElementById("searchInput").value;
+  if (input.trim()) {
+    alert("Lütfen isim listesinden seçim yapın.");
+  }
+}
 
-    // Grafik
+
+    // Grafik oluşturma
     const nodes = {{ nodes | tojson }};
     const edges = {{ edges | tojson }};
     const container = document.getElementById("network");
