@@ -157,6 +157,21 @@ def create():
                     return "Bu isim veya slug zaten alınmış."
         return redirect(url_for('login', slug=slug))
     return render_template("create.html")
+    
+    
+@app.route('/fix-visitor-ids')
+def fix_visitor_ids():
+    with get_db_connection() as conn:
+        with conn.cursor() as c:
+            c.execute('''
+                UPDATE connections
+                SET visitor_id = users.id
+                FROM users
+                WHERE connections.visitor_name = users.name
+            ''')
+            conn.commit()
+    return "visitor_id alanları eşleştirildi!"
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
