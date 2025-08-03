@@ -85,7 +85,8 @@ def build_graph_multi(rows, user_rows):
 
     user_id_to_name = {u['id']: u['name'] for u in user_rows}
     user_name_to_slug = {u['name']: u['slug'] for u in user_rows}
-    user_id_to_color = {u['id']: random_color() for u in user_rows}
+    user_id_to_color = {u['id']: fixed_color(u['id']) for u in user_rows}
+
 
     name_to_owners = defaultdict(set)
     all_edges = set()
@@ -125,6 +126,23 @@ def build_graph_multi(rows, user_rows):
 
     edges_vis = [{"from": name_to_id[f], "to": name_to_id[t]} for f, t in all_edges]
     return nodes_vis, edges_vis
+    
+    
+def fixed_color(user_id):
+    palette = [
+        "#4CAF50",  # yeşil
+        "#81C784",  # açık yeşil
+        "#66BB6A",  # yeşil tonu
+        "#388E3C",  # koyu yeşil
+        "#2E7D32",  # zeytin yeşili
+        "#1B5E20",  # orman yeşili
+        "#A5D6A7",  # pastel yeşil
+        "#43A047",  # canlı yeşil
+        "#00796B",  # mavi-yeşil
+        "#33691E",  # toprak yeşili
+    ]
+    return palette[user_id % len(palette)]
+
 
 @app.route('/')
 def home():
