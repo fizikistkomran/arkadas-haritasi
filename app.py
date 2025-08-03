@@ -4,6 +4,7 @@ import os, random, colorsys, re
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from collections import defaultdict
+import unicodedata
 
 app = Flask(__name__)
 app.secret_key = 'super-secret-key'
@@ -20,6 +21,24 @@ def slugify(text):
     text = re.sub(r'[^\w\s-]', '', text)
     text = re.sub(r'\s+', '-', text)
     return text.strip('-')
+    
+    
+# İsim normalize fonksiyonu
+def normalize_name(name):
+    if not name:
+        return ""
+    mapping = {
+        'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
+        'Ç': 'c', 'Ğ': 'g', 'İ': 'i', 'Ö': 'o', 'Ş': 's', 'Ü': 'u',
+        'I': 'i'
+    }
+    for src, target in mapping.items():
+        name = name.replace(src, target)
+    return name.lower().strip()
+
+    
+    
+
 
 def get_db_connection():
     return psycopg2.connect(
@@ -217,14 +236,17 @@ def user_page(slug):
                 return "Kullanıcı bulunamadı"
             owner_id, owner_name = user['id'], user['name']
             if request.method == 'POST' and session.get('user_id') != owner_id:
-                try:
-                    visitor_name = request.form['name']
-                    connection_type = request.form['type']
-                    connector_name = request.form.get('connector') or None
-                    c.execute("SELECT 1 FROM connections WHERE owner_id = %s AND visitor_name = %s",
-                              (owner_id, visitor_name))
-                    if c.fetchone():
-                        return f"{visitor_name} zaten eklenmiş."
+                   visitor_name = request.form['name']
+    connection_type = request.form['type']
+    connector_name = request.form.get('connector', '')
+
+    # Normalize edilerek mevcutları kontrol et
+    c.execute("SELECT visitor_name FROM connections WHERE owner_id = %s", (owner_id,))
+    existing = [normalize_name(row['visitor_name']) for row in c.fetchall()]
+
+    if normalize_name(visitor_name) in existing:
+        return f"{visitor_name} zaten eklenmiş."
+
                     c.execute("INSERT INTO connections (owner_id, visitor_name, connection_type, connector_name) VALUES (%s, %s, %s, %s)",
                               (owner_id, visitor_name, connection_type, connector_name))
                     conn.commit()
@@ -236,6 +258,17 @@ def user_page(slug):
     nodes_vis, edges_vis = build_graph_multi(rows, [{"id": owner_id, "name": owner_name, "slug": slug}])
     is_owner = session.get('user_id') == owner_id
     return render_template("user_page.html", nodes=nodes_vis, edges=edges_vis, slug=slug, is_owner=is_owner)
+    
+@app.route('/normalize-db')
+def normalize_db():
+    with get_db_connection() as conn:
+        with conn.cursor() as c:
+            c.execute("UPDATE connections SET visitor_name = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(visitor_name,'Ç','C'),'Ğ','G'),'İ','I'),'Ö','O'),'Ş','S'),'Ü','U'),'ç','c'),'ğ','g'),'ı','i'),'ö','o'),'ş','s'),'ü','u'))")
+            c.execute("UPDATE connections SET connector_name = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(connector_name,'Ç','C'),'Ğ','G'),'İ','I'),'Ö','O'),'Ş','S'),'Ü','U'),'ç','c'),'ğ','g'),'ı','i'),'ö','o'),'ş','s'),'ü','u'))")
+            conn.commit()
+    return "Veritabanındaki isimler normalize edildi."
+
+    
 
 @app.route('/edit/<slug>', methods=['GET', 'POST'])
 def edit_page(slug):
