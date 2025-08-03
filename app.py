@@ -137,6 +137,7 @@ def home():
     nodes, edges = build_graph_multi(conn_rows, user_rows)
     return render_template("home.html", nodes=nodes, edges=edges)
 
+
 @app.route('/suggest')
 def suggest():
     query = request.args.get('q', '').lower()
@@ -320,6 +321,7 @@ def normalize_history():
     return "Geçmişe dönük tüm kullanıcı ve bağlantı verileri normalize edildi."
 
 
+
 @app.route('/edit/<slug>', methods=['GET', 'POST'])
 def edit_page(slug):
     with get_db_connection() as conn:
@@ -328,7 +330,8 @@ def edit_page(slug):
             user = c.fetchone()
             if not user:
                 return "Kullanıcı bulunamadı"
-            owner_id, owner_name = user['id'], user['name']
+            owner_id = user['id']
+            owner_name = user['name']
             if session.get("user_id") != owner_id:
                 return "Yetkisiz giriş"
             if request.method == 'POST':
@@ -343,7 +346,11 @@ def edit_page(slug):
                 ORDER BY id DESC
             """, (owner_id,))
             connections = c.fetchall()
-    return render_template("edit.html", slug=slug, name=owner_name, connections=connections)
+            c.execute("SELECT visitor_name, connection_type, connector_name FROM connections WHERE owner_id = %s", (owner_id,))
+            rows = c.fetchall()
+    nodes_vis, edges_vis = build_graph_multi(rows, [{"id": owner_id, "name": owner_name, "slug": slug}])
+    return render_template("edit.html", slug=slug, name=owner_name, connections=connections, nodes=nodes_vis, edges=edges_vis)
+
 
 # Başlat
 init_db()
