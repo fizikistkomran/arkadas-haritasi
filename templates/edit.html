@@ -7,6 +7,8 @@
 
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script type="text/javascript" src="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.js"></script>
+  <link href="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.css" rel="stylesheet"/>
 
   <style>
     body {
@@ -16,7 +18,7 @@
     }
 
     .container {
-      max-width: 800px;
+      max-width: 960px;
       margin: auto;
       background: #fff;
       padding: 30px;
@@ -37,6 +39,13 @@
       color: #000;
     }
 
+    #graph-container {
+      height: 400px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+
     table td, table th {
       vertical-align: middle !important;
     }
@@ -50,47 +59,75 @@
 </head>
 <body>
 
-  <a href="/" class="home-button">🏠 Ana Sayfa</a>
+<a href="/" class="home-button">🏠 Ana Sayfa</a>
 
-  <div class="container">
-    <h2 class="mb-3">🔧 {{ name }} — Bağlantılarını Düzenle</h2>
-    <a href="/{{ slug }}" class="btn btn-secondary mb-4">← Profiline Geri Dön</a>
+<div class="container">
+  <h2 class="mb-3">🔧 {{ name }} — Bağlantılarını Düzenle</h2>
+  <a href="/{{ slug }}" class="btn btn-secondary mb-4">← Profiline Geri Dön</a>
 
-    {% if connections %}
-      <div class="table-responsive">
-        <table class="table table-striped table-bordered align-middle">
-          <thead class="table-light">
+  <div id="graph-container"></div>
+
+  {% if connections %}
+    <div class="table-responsive">
+      <table class="table table-striped table-bordered align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Ziyaretçi Adı</th>
+            <th>Tanışma Türü</th>
+            <th>Tanıştıran</th>
+            <th>Sil</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for conn in connections %}
             <tr>
-              <th>Ziyaretçi Adı</th>
-              <th>Tanışma Türü</th>
-              <th>Tanıştıran</th>
-              <th>Sil</th>
+              <td>{{ conn.visitor_name }}</td>
+              <td>{{ conn.connection_type }}</td>
+              <td>{{ conn.connector_name or '-' }}</td>
+              <td>
+                <form method="POST" onsubmit="return confirm('Bu bağlantıyı silmek istediğinize emin misiniz?')">
+                  <input type="hidden" name="delete_id" value="{{ conn.id }}">
+                  <button type="submit" class="btn btn-danger btn-sm">🗑️ Sil</button>
+                </form>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {% for conn in connections %}
-              <tr>
-                <td>{{ conn.visitor_name }}</td>
-                <td>{{ conn.connection_type }}</td>
-                <td>{{ conn.connector_name or '-' }}</td>
-                <td>
-                  <form method="POST" onsubmit="return confirm('Bu bağlantıyı silmek istediğinize emin misiniz?')">
-                    <input type="hidden" name="delete_id" value="{{ conn.id }}">
-                    <button type="submit" class="btn btn-danger btn-sm">🗑️ Sil</button>
-                  </form>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <p class="text-muted">Henüz bağlantı eklenmemiş.</p>
-    {% endif %}
-  </div>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-muted">Henüz bağlantı eklenmemiş.</p>
+  {% endif %}
+</div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Vis.js network init -->
+<script>
+  const nodes = new vis.DataSet({{ nodes | tojson }});
+  const edges = new vis.DataSet({{ edges | tojson }});
+  const container = document.getElementById('graph-container');
+  const data = { nodes, edges };
+  const options = {
+    nodes: {
+      shape: 'dot',
+      size: 20,
+      font: { size: 14, color: '#000' },
+      borderWidth: 1
+    },
+    edges: {
+      arrows: 'to',
+      smooth: true
+    },
+    physics: {
+      stabilization: true,
+      barnesHut: { springLength: 95 }
+    }
+  };
+  new vis.Network(container, data, options);
+</script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
 
