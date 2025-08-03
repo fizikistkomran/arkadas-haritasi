@@ -22,6 +22,9 @@
             font-size: 32px;
             font-weight: bold;
             color: #000;
+            position: absolute;
+            top: 20px;
+            left: 30px;
         }
 
         .logo span {
@@ -30,14 +33,13 @@
 
         .left-panel {
             width: 320px;
-            padding: 60px 30px;
+            padding: 100px 30px 30px 30px;
             display: flex;
             flex-direction: column;
             align-items: center;
             background-color: #fff;
             justify-content: center;
-            height: 50vh;
-            margin-left: 15px;
+            height: 100vh;
             position: relative;
         }
 
@@ -119,6 +121,7 @@
             }
 
             .logo {
+                position: static;
                 text-align: center;
                 margin: 20px 0 10px;
             }
@@ -126,16 +129,13 @@
             .left-panel {
                 width: 100%;
                 padding: 20px;
-                margin-left: 0;
                 height: auto;
                 order: 3;
-                background: #fff;
             }
 
             .graph-area {
                 width: 100%;
                 height: 60vh;
-                position: relative;
                 order: 2;
             }
 
@@ -151,69 +151,69 @@
 </head>
 <body>
 
+<div class="left-panel">
     <div class="logo">enfekte<span>.org</span></div>
 
-    <div class="graph-area">
-        <div id="graph"></div>
-    </div>
+    <input type="text" id="searchInput" placeholder="Kişi Adı (ör. Deniz Özkan)" oninput="fetchSuggestions()">
+    <ul id="suggestions"></ul>
 
-    <div class="left-panel">
-        <input type="text" id="searchInput" placeholder="Kişi Adı (ör. Deniz Özkan)" oninput="fetchSuggestions()">
-        <ul id="suggestions"></ul>
+    <button class="btn" onclick="goToPerson()">Kişiye Git</button>
+    <button class="btn secondary" onclick="window.location.href='/create'">Kendi Ağını Oluştur</button>
+    <button class="btn dark" onclick="window.location.href='/login'">Ağına Giriş Yap</button>
+</div>
 
-        <button class="btn" onclick="goToPerson()">Kişiye Git</button>
-        <button class="btn secondary" onclick="window.location.href='/create'">Kendi Ağını Oluştur</button>
-        <button class="btn dark" onclick="window.location.href='/login'">Ağına Giriş Yap</button>
-    </div>
+<div class="graph-area">
+    <div id="graph"></div>
+</div>
 
-    <script src="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.js"></script>
+<script src="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.js"></script>
 
-    <script>
-        const nodes = {{ nodes | tojson }};
-        const edges = {{ edges | tojson }};
-        const container = document.getElementById('graph');
+<script>
+    const nodes = {{ nodes | tojson }};
+    const edges = {{ edges | tojson }};
+    const container = document.getElementById('graph');
 
-        const network = new vis.Network(container, { nodes, edges }, {
-            nodes: { shape: 'dot', size: 12, font: { size: 14 } },
-            edges: { arrows: 'to', color: '#aaa' },
-            physics: { stabilization: false }
-        });
+    const network = new vis.Network(container, { nodes, edges }, {
+        nodes: { shape: 'dot', size: 12, font: { size: 14 } },
+        edges: { arrows: 'to', color: '#aaa' },
+        physics: { stabilization: false }
+    });
 
-        function fetchSuggestions() {
-            const query = document.getElementById("searchInput").value;
-            if (query.length < 2) {
-                document.getElementById("suggestions").innerHTML = "";
-                return;
-            }
-
-            fetch(`/suggest?q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
-                .then(data => {
-                    const ul = document.getElementById("suggestions");
-                    ul.innerHTML = "";
-                    data.results.forEach(person => {
-                        const li = document.createElement("li");
-                        li.textContent = person.name;
-                        li.onclick = () => window.location.href = "/" + person.slug;
-                        ul.appendChild(li);
-                    });
-                });
+    function fetchSuggestions() {
+        const query = document.getElementById("searchInput").value;
+        if (query.length < 2) {
+            document.getElementById("suggestions").innerHTML = "";
+            return;
         }
 
-        function goToPerson() {
-            const name = document.getElementById("searchInput").value;
-            if (name.length < 2) return;
-            fetch(`/suggest?q=${encodeURIComponent(name)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.results.length > 0) {
-                        window.location.href = "/" + data.results[0].slug;
-                    } else {
-                        alert("Kişi bulunamadı.");
-                    }
+        fetch(`/suggest?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                const ul = document.getElementById("suggestions");
+                ul.innerHTML = "";
+                data.results.forEach(person => {
+                    const li = document.createElement("li");
+                    li.textContent = person.name;
+                    li.onclick = () => window.location.href = "/" + person.slug;
+                    ul.appendChild(li);
                 });
-        }
-    </script>
+            });
+    }
+
+    function goToPerson() {
+        const name = document.getElementById("searchInput").value;
+        if (name.length < 2) return;
+        fetch(`/suggest?q=${encodeURIComponent(name)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.results.length > 0) {
+                    window.location.href = "/" + data.results[0].slug;
+                } else {
+                    alert("Kişi bulunamadı.");
+                }
+            });
+    }
+</script>
 
 </body>
 </html>
