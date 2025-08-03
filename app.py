@@ -299,15 +299,24 @@ def user_page(slug):
                 existing = [normalize_name(row['visitor_name']) for row in c.fetchall()]
                 if normalize_name(visitor_name) in existing:
                     return f"{visitor_name} zaten eklenmiş."
-                c.execute("INSERT INTO connections (owner_id, visitor_name, connection_type, connector_name) VALUES (%s, %s, %s, %s)",
-                          (owner_id, visitor_name, connection_type, connector_name))
+                c.execute(
+                    "INSERT INTO connections (owner_id, visitor_name, connection_type, connector_name) VALUES (%s, %s, %s, %s)",
+                    (owner_id, visitor_name, connection_type, connector_name))
                 conn.commit()
                 return redirect(url_for('user_page', slug=slug))
 
-            c.execute("SELECT visitor_name, connection_type, connector_name FROM connections WHERE owner_id = %s", (owner_id,))
+            # Güncellenmiş sorgu: kullanıcının dahil olduğu tüm bağlantılar
+            c.execute("""
+                SELECT * FROM connections 
+                WHERE owner_id = %s OR visitor_name = %s OR connector_name = %s
+            """, (owner_id, owner_name, owner_name))
             rows = c.fetchall()
 
-    nodes_vis, edges_vis = build_graph_multi(rows, [{"id": owner_id, "name": owner_name, "slug": slug}])
+            # Tüm kullanıcıları çek (grafik oluşturmak için)
+            c.execute("SELECT id, name, slug FROM users")
+            user_rows = c.fetchall()
+
+    nodes_vis, edges_vis = build_graph_multi(rows, user_rows)
     is_owner = session.get('user_id') == owner_id
     return render_template("user_page.html", nodes=nodes_vis, edges=edges_vis, slug=slug, is_owner=is_owner)
 
