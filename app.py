@@ -8,7 +8,6 @@ from collections import defaultdict
 app = Flask(__name__)
 app.secret_key = 'super-secret-key'
 
-# Slugify fonksiyonu
 def slugify(text):
     mapping = {
         'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
@@ -17,11 +16,10 @@ def slugify(text):
     for src, target in mapping.items():
         text = text.replace(src, target)
     text = text.lower()
-    text = re.sub(r'[^\w\s-]', '', text)  # Noktalama kaldır
-    text = re.sub(r'\s+', '-', text)      # Boşlukları - yap
+    text = re.sub(r'[^\w\s-]', '', text)
+    text = re.sub(r'\s+', '-', text)
     return text.strip('-')
 
-# Veritabanı bağlantı
 def get_db_connection():
     return psycopg2.connect(
         dbname="railway",
@@ -32,7 +30,6 @@ def get_db_connection():
         cursor_factory=RealDictCursor
     )
 
-# Tabloları oluştur
 def init_db():
     with get_db_connection() as conn:
         with conn.cursor() as c:
@@ -55,7 +52,6 @@ def init_db():
             ''')
         conn.commit()
 
-# Renkler
 def random_color():
     h, s, v = random.random(), 0.5 + random.random() * 0.5, 0.7 + random.random() * 0.3
     r, g, b = colorsys.hsv_to_rgb(h, s, v)
@@ -69,7 +65,6 @@ def mix_colors(colors):
     n = len(colors)
     return f"rgb({r//n}, {g//n}, {b//n})"
 
-# Ana sayfa grafiği
 def build_graph_multi(rows, user_rows):
     owner_to_rows = defaultdict(list)
     for row in rows:
@@ -187,7 +182,7 @@ def login(slug):
         return "Şifre hatalı."
     return render_template("login.html", slug=slug)
 
-@app.route('/edit/<slug>', methods=['GET', 'POST'])
+@app.route('/<slug>', methods=['GET', 'POST'])
 def user_page(slug):
     with get_db_connection() as conn:
         with conn.cursor() as c:
@@ -215,42 +210,27 @@ def user_page(slug):
     return render_template("user_page.html", nodes=nodes_vis, edges=edges_vis, slug=slug, is_owner=is_owner)
 
 @app.route('/edit/<slug>', methods=['GET', 'POST'])
-@app.route('/edit/<slug>', methods=['GET', 'POST'])
 def edit_page(slug):
     with get_db_connection() as conn:
         with conn.cursor() as c:
-            # Kullanıcıyı getir
             c.execute("SELECT id, name FROM users WHERE slug = %s", (slug,))
             user = c.fetchone()
             if not user:
                 return "Kullanıcı bulunamadı"
-
             owner_id = user['id']
             owner_name = user['name']
-
-            # Giriş kontrolü
             if session.get("user_id") != owner_id:
                 return "Yetkisiz giriş"
-
-            # Silme işlemi
             if request.method == 'POST':
                 conn_id = request.form.get("delete_id")
                 if conn_id:
                     c.execute("DELETE FROM connections WHERE id = %s", (conn_id,))
                     conn.commit()
-
-            # Bağlantıları çek
-            c.execute("""
-                SELECT id, visitor_name, connection_type, connector_name 
-                FROM connections 
-                WHERE owner_id = %s
-                ORDER BY id DESC
-            """, (owner_id,))
+            c.execute("SELECT id, visitor_name, connection_type, connector_name FROM connections WHERE owner_id = %s ORDER BY id DESC", (owner_id,))
             connections = c.fetchall()
-
     return render_template("edit.html", slug=slug, name=owner_name, connections=connections)
 
-# Başlat
+# DB başlat
 init_db()
 
 if __name__ == '__main__':
