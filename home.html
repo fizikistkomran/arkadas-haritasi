@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>enfekte.co</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+    }
+
+    .logo {
+      font-size: 32px;
+      font-weight: bold;
+      color: #000;
+      position: absolute;
+      top: 20px;
+      left: 30px;
+    }
+
+    .logo span {
+      color: #4CAF50;
+    }
+
+    .left-panel {
+      width: 320px;
+      padding: 100px 30px 30px 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #fff;
+      justify-content: center;
+      height: 100vh;
+      position: relative;
+    }
+
+    #searchInput {
+      width: 100%;
+      padding: 12px 18px;
+      font-size: 16px;
+      border-radius: 20px;
+      border: 2px solid #a3d8e8;
+      outline: none;
+    }
+
+    #suggestions {
+      width: 100%;
+      list-style: none;
+      padding: 0;
+      margin: 8px 0;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    #suggestions li {
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: #ffffffcc;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #suggestions li:hover {
+      background: #e6ffe6;
+    }
+
+    .btn {
+      margin-top: 16px;
+      padding: 14px 0;
+      width: 100%;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      background: #4CAF50;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover {
+      background: #45a045;
+    }
+
+    .btn.secondary {
+      background: #81C784;
+    }
+
+    .btn.dark {
+      background: #006400;
+    }
+
+    .graph-area {
+      flex: 1;
+      position: relative;
+      height: 100vh;
+    }
+
+    #graph {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+
+    /* Grafikte kişi arama kutusu */
+    #graphSearchBox {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      text-align: center;
+    }
+
+    #graphSearchInput {
+      padding: 10px 18px;
+      font-size: 16px;
+      border-radius: 20px;
+      border: 2px solid #ccc;
+      width: 260px;
+    }
+
+    #graphSuggestions {
+      list-style: none;
+      padding: 0;
+      margin: 4px 0 0;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+      max-height: 150px;
+      overflow-y: auto;
+      width: 260px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #graphSuggestions li {
+      padding: 8px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+
+    #graphSuggestions li:hover {
+      background: #f0f0f0;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+        height: auto;
+        align-items: center;
+      }
+
+      .logo {
+        position: static;
+        text-align: center;
+        margin: 20px 0 10px;
+      }
+
+      .left-panel {
+        width: 100%;
+        padding: 20px;
+        height: auto;
+        order: 3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #searchInput,
+      .btn,
+      #suggestions {
+        width: 100%;
+        max-width: 320px;
+        margin: 8px auto;
+        display: block;
+      }
+
+      .graph-area {
+        width: 100%;
+        min-height: 300px;
+        order: 2;
+        position: relative;
+      }
+
+      #graph {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+
+      #graphSearchBox {
+        width: 100%;
+      }
+
+      #graphSearchInput {
+        width: 90%;
+        max-width: 300px;
+      }
+
+      #graphSuggestions {
+        max-width: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Grafikte kişi ara kutusu -->
+  <div id="graphSearchBox">
+    <input
+      type="text"
+      id="graphSearchInput"
+      placeholder="Grafikte Kişi Ara"
+      oninput="filterGraphSuggestions()"
+      onkeydown="if(event.key === 'Enter') zoomToGraphName()"
+    />
+    <ul id="graphSuggestions"></ul>
+  </div>
+
+  <!-- Sol panel -->
+  <div class="left-panel">
+    <div class="logo">enfekte<span>.co</span></div>
+
+    <input type="text" id="searchInput" placeholder="Kişi Adı (ör. Deniz Özkan)" oninput="fetchSuggestions()" />
+    <ul id="suggestions"></ul>
+
+    <button class="btn" onclick="goToPerson()">Kişiye Git</button>
+    <button class="btn secondary" onclick="window.location.href='/create'">Kendi Ağını Oluştur</button>
+    <button class="btn dark" onclick="window.location.href='/login'">Ağına Giriş Yap</button>
+  </div>
+
+  <!-- Grafik alanı -->
+  <div class="graph-area">
+    <div id="graph"></div>
+  </div>
+
+  <script src="https://unpkg.com/vis-network@9.1.2/dist/vis-network.min.js"></script>
+
+  <script>
+    const nodes = {{ nodes | tojson }};
+    const edges = {{ edges | tojson }};
+
+    const container = document.getElementById('graph');
+    let network = new vis.Network(container, { nodes, edges }, {
+      nodes: { shape: 'dot', size: 12, font: { size: 14 } },
+      edges: { arrows: 'to', color: '#aaa' },
+      physics: { stabilization: false }
+    });
+
+    function fetchSuggestions() {
+      const query = document.getElementById("searchInput").value;
+      if (query.length < 2) {
+        document.getElementById("suggestions").innerHTML = "";
+        return;
+      }
+
+      fetch(`/suggest?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+          const ul = document.getElementById("suggestions");
+          ul.innerHTML = "";
+          data.results.forEach(person => {
+            const li = document.createElement("li");
+            li.textContent = person.name;
+            li.onclick = () => window.location.href = "/" + person.slug;
+            ul.appendChild(li);
+          });
+        });
+    }
+
+    function goToPerson() {
+      const name = document.getElementById("searchInput").value;
+      if (name.length < 2) return;
+      fetch(`/suggest?q=${encodeURIComponent(name)}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.results.length > 0) {
+            window.location.href = "/" + data.results[0].slug;
+          } else {
+            alert("Kişi bulunamadı.");
+          }
+        });
+    }
+
+    function filterGraphSuggestions() {
+      const input = document.getElementById("graphSearchInput");
+      const query = input.value.toLowerCase();
+      const ul = document.getElementById("graphSuggestions");
+      ul.innerHTML = "";
+      if (query.length < 2) return;
+
+      const matches = nodes.filter(n => n.label.toLowerCase().includes(query));
+      matches.forEach(node => {
+        const li = document.createElement("li");
+        li.textContent = node.label;
+        li.onclick = () => {
+          input.value = node.label;
+          ul.innerHTML = "";
+          focusNode(node.id);
+        };
+        ul.appendChild(li);
+      });
+    }
+
+    function zoomToGraphName() {
+      const input = document.getElementById("graphSearchInput");
+      const query = input.value.toLowerCase().trim();
+      if (!query) return;
+
+      const match = nodes.find(n => n.label.toLowerCase().includes(query));
+      if (match) {
+        focusNode(match.id);
+      } else {
+        input.style.borderColor = "#e74c3c";
+      }
+    }
+
+    function focusNode(nodeId) {
+      if (!network) return;
+      network.focus(nodeId, {
+        scale: 1.6,
+        animation: {
+          duration: 800,
+          easingFunction: "easeInOutQuad"
+        }
+      });
+      document.getElementById("graphSearchInput").style.borderColor = "#4CAF50";
+    }
+  </script>
+
+</body>
+</html>
