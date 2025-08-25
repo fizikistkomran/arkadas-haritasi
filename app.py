@@ -167,7 +167,8 @@ def mix_colors(colors):
     avg_r = total_r // valid_count
     avg_g = total_g // valid_count
     avg_b = total_b // valid_count
-    return f"rgb({avg_r}, {avg_g}, {avg_b})'
+    # HATA DÜZELTİLDİ: tırnaklar eşleşiyor
+    return f"rgb({avg_r}, {avg_g}, {avg_b})"
 
 def fixed_color(user_id):
     palette = [
